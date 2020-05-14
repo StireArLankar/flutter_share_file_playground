@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:xml/xml.dart' as xml;
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
@@ -13,12 +15,28 @@ class _MyAppState extends State<MyApp> {
   StreamSubscription _subscription;
   String _sharedText;
   String _parsedPath;
+  Future<String> _firstString;
+  xml.XmlDocument _document;
 
   void updateState(String str) {
     setState(() {
       _sharedText = str;
       _parsedPath = str != null ? Uri.decodeFull(str).split(':').last : null;
       print(_parsedPath);
+
+      if (_parsedPath == null) return;
+
+      final extension = _parsedPath.split('.').last;
+
+      if (extension != 'fb2') return;
+
+      final file = File(_parsedPath);
+
+      _firstString = file.readAsString().then((value) {
+        setState(() => _document = xml.parse(value));
+        final result = value.split('\n').sublist(0, 1).join('\n\n');
+        return Future.delayed(Duration(seconds: 5), () => result);
+      }).catchError(print);
     });
   }
 
@@ -70,12 +88,55 @@ class _MyAppState extends State<MyApp> {
                   child: Text(_parsedPath ?? ""),
                   color: Colors.red[100],
                 ),
+                SizedBox(height: 10),
                 Expanded(
-                  child: ListView(),
+                  child: Column(
+                    children: <Widget>[
+                      buildLoader(),
+                      buildReader(),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  FutureBuilder<String> buildLoader() {
+    return FutureBuilder<String>(
+      future: _firstString,
+      builder: (ctx, snapshot) {
+        Widget child;
+
+        if (snapshot.hasData) {
+          child = Text(snapshot.data);
+        } else if (snapshot.hasError) {
+          child = Text('Error: ${snapshot.error}');
+        } else {
+          child = CircularProgressIndicator();
+        }
+
+        return Padding(
+          child: child,
+          padding: EdgeInsets.all(5.0),
+        );
+      },
+    );
+  }
+
+  Widget buildReader() {
+    if (_document == null) return Container();
+
+    final info = _document.findAllElements('title-info').first;
+
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: info != null ? Text(info.toXmlString()) : Text(''),
         ),
       ),
     );

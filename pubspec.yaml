@@ -14,10 +14,10 @@ description: A new Flutter project.
 version: 1.0.0+1
 
 environment:
-  sdk: '>=2.1.0 <3.0.0'
+  sdk: '>=2.2.2 <3.0.0'
 
 dependencies:
-  mime_type: ^0.3.0
+  xml: ^4.1.0
   receive_sharing_intent: ^1.4.0+2
   flutter:
     sdk: flutter

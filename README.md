@@ -55,6 +55,14 @@ To get correct path (`/storage/emulated/0/Download/gardar.fb2`) for future file 
       _sharedText = str;
       _parsedPath = str != null ? Uri.decodeFull(str).split(':').last : null;
       print(_parsedPath);
+
+      if (_parsedPath == null) return;
+
+      final file = File(_parsedPath);
+
+      Future<String> _result_ = file.readAsString().then((value) {
+        return value.split('\n')[0]
+      }).catchError(print);
     });
   }
 
